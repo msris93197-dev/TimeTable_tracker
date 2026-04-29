@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowTrack – Daily Goal Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & ROOT ─────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080f;
+  --s1:#0b0f1c;
+  --s2:#0f1526;
+  --s3:#141d30;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);
+  --text:#eef0f8;
+  --muted:#4a5470;
+  --dim:#1e2640;
+  --font:'DM Sans',sans-serif;
+  --display:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --radius:14px;
+  --radius-sm:9px;
+  --radius-lg:20px;
+}
+html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{font-family:var(--font);cursor:pointer;transition:all .15s}
+input,textarea,select{font-family:var(--font)}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:99px}
+
+/* ─── LAYOUT ────────────────────────────────────────────────── */
+#app{max-width:800px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+/* ─── HEADER ────────────────────────────────────────────────── */
+#header{
+  position:sticky;top:0;z-index:300;
+  background:rgba(6,8,15,0.92);
+  backdrop-filter:blur(24px) saturate(180%);
+  border-bottom:1px solid var(--border);
+}
+.hdr-top{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 0}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,#2563eb 0%,#4f46e5 100%);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  box-shadow:0 4px 14px rgba(79,70,229,0.4);
+}
+.brand-name{font-family:var(--display);font-size:21px;font-weight:800;letter-spacing:-0.5px;
+  background:linear-gradient(135deg,#93c5fd,#a5b4fc 60%,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-date{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+.hdr-right{text-align:right}
+.hdr-score-num{font-family:var(--display);font-size:28px;font-weight:900;line-height:1;letter-spacing:-1px}
+.hdr-score-lbl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+
+/* ─── TABS ──────────────────────────────────────────────────── */
+.tabs{display:flex;padding:0 22px;gap:0;margin-top:10px}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 4px 10px;background:none;border:none;
+  border-bottom:2px solid transparent;
+  color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  transition:all .2s;cursor:pointer;
+}
+.tab .ti{font-size:16px;margin-bottom:1px}
+.tab.active{border-bottom-color:#4f46e5;color:#a5b4fc}
+.tab:hover:not(.active){color:rgba(255,255,255,.45)}
+
+/* ─── CONTENT ───────────────────────────────────────────────── */
+#content{flex:1;padding:22px;padding-bottom:60px}
+
+/* ─── FORM ELEMENTS ─────────────────────────────────────────── */
+.inp{
+  width:100%;padding:11px 14px;
+  background:var(--s2);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--text);font-size:14px;outline:none;transition:border-color .2s;
+}
+.inp:focus{border-color:rgba(99,102,241,.7);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.inp::placeholder{color:var(--muted)}
+.ta{resize:vertical;min-height:68px;line-height:1.6}
+.sel{
+  -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%234a5470' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;cursor:pointer;
+}
+.lbl{
+  display:block;font-size:10px;font-weight:700;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;margin-top:18px
+}
+
+/* ─── BUTTONS ───────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:700;padding:10px 18px;transition:all .15s;cursor:pointer;letter-spacing:.02em}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.35)}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(79,70,229,.5)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn-ghost:hover{background:var(--s3);color:var(--text)}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px}
+.btn-danger{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.3);color:#f43f5e}
+
+/* ─── CARDS ─────────────────────────────────────────────────── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.card-sm{padding:12px 15px}
+
+/* ─── MODALS ────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px;backdrop-filter:blur(6px)}
+.modal{background:#0c1120;border:1px solid rgba(255,255,255,.09);border-radius:var(--radius-lg);padding:26px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-lg{max-width:640px}
+.mhdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
+.mhdr h2{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:-.3px}
+.xbtn{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+
+/* ─── COLOR PICKER ──────────────────────────────────────────── */
+.cpgrid{display:flex;gap:9px;flex-wrap:wrap}
+.cpdot{width:32px;height:32px;border-radius:50%;cursor:pointer;transition:all .15s;border:2px solid transparent;flex-shrink:0}
+.cpdot.sel{transform:scale(1.22);outline-offset:3px}
+
+/* ─── SECTION TITLE ─────────────────────────────────────────── */
+.sectitle{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;margin-top:26px;padding-left:2px}
+
+/* ─── GOAL CARD ─────────────────────────────────────────────── */
+.gcard{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 15px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--s1);margin-bottom:7px;transition:all .15s;cursor:pointer;
+}
+.gcard:hover{background:var(--s2)}
+.gdot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.gcard-body{flex:1;min-width:0}
+.gcard-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcard-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:3px}
+.gmeta-tag{font-size:11px;color:var(--muted)}
+.star-btn{
+  width:34px;height:34px;border-radius:9px;
+  border:1px solid var(--border2);background:transparent;
+  font-size:17px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:pointer;transition:all .2s;
+}
+.star-btn.starred{transform:scale(1.1)}
+
+/* ─── DAILY TASK CARD ───────────────────────────────────────── */
+.dtcard{
+  border-radius:var(--radius);border:1px solid var(--border);border-left-width:3px;
+  background:var(--s1);margin-bottom:10px;overflow:hidden;
+}
+.dtcard-hdr{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer}
+.dtcard-body{padding:0 15px 14px}
+.check-circle{
+  width:26px;height:26px;border-radius:50%;border:2px solid;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;flex-shrink:0;cursor:pointer;transition:all .2s;
+}
+.delay-btn{
+  padding:5px 11px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;
+  background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);color:#fb923c;
+}
+.delay-inp{display:none;margin-top:8px}
+.delay-inp.show{display:block}
+
+/* ─── PROGRESS BAR ──────────────────────────────────────────── */
+.pgtrack{height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.pgfill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* ─── STREAK CALENDAR (LeetCode style) ─────────────────────── */
+.cal-wrap{overflow-x:auto;padding-bottom:4px}
+.cal-inner{display:inline-block}
+.cal-month-row{display:flex;margin-left:26px;height:16px;position:relative;margin-bottom:3px}
+.cal-m-lbl{position:absolute;font-size:9px;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.04em}
+.cal-grid{display:flex;gap:0}
+.cal-day-lbls{display:flex;flex-direction:column;gap:2px;width:22px;margin-right:3px;flex-shrink:0}
+.cal-dlbl{height:11px;font-size:8.5px;color:rgba(255,255,255,.25);line-height:11px;text-align:right;font-weight:500}
+.cal-cols{display:flex;gap:2px}
+.cal-col{display:flex;flex-direction:column;gap:2px}
+.ccell{
+  width:11px;height:11px;border-radius:2px;cursor:default;
+  transition:transform .1s;flex-shrink:0;
+}
+.ccell:hover{transform:scale(1.6);z-index:10;position:relative}
+.cal-legend{display:flex;align-items:center;gap:4px;margin-top:7px;margin-left:26px;font-size:9px;color:rgba(255,255,255,.28)}
+.cl-cell{width:11px;height:11px;border-radius:2px;flex-shrink:0}
+
+/* ─── SCORE CARDS ───────────────────────────────────────────── */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px}
+.scard{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.sval{font-family:var(--display);font-size:22px;font-weight:900;line-height:1}
+.slbl{font-size:10px;color:var(--muted);margin-top:4px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+
+/* ─── EMPTY ─────────────────────────────────────────────────── */
+.empty{text-align:center;padding:50px 20px;color:var(--dim)}
+.empty-ico{font-size:42px;margin-bottom:16px}
+.empty-t{font-family:var(--display);font-size:17px;font-weight:700;color:var(--muted);margin-bottom:8px}
+.empty-d{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* ─── FIRST TASK BANNER ─────────────────────────────────────── */
+.ftbanner{padding:14px 18px;border-radius:var(--radius);border:1px solid;margin-bottom:22px}
+.ft-tag{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+.ft-title{font-size:17px;font-weight:800;font-family:var(--display)}
+
+/* ─── MOOD ROW ──────────────────────────────────────────────── */
+.mood-row{display:flex;gap:8px}
+.mbtn{
+  flex:1;padding:11px 4px;border-radius:var(--radius-sm);
+  background:var(--s2);border:1px solid var(--border2);
+  font-size:23px;cursor:pointer;transition:all .15s;text-align:center;
+}
+.mbtn.active{border-width:2px;transform:scale(1.1)}
+
+/* ─── STREAK BADGE ──────────────────────────────────────────── */
+.sbadge{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;font-family:var(--mono)}
+
+/* ─── CONGRATS ──────────────────────────────────────────────── */
+.congrats{
+  padding:14px 20px;border-radius:var(--radius);margin-bottom:22px;
+  background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);
+  color:#4ade80;font-weight:700;text-align:center;font-size:14px;
+}
+
+/* ─── PLAN GOAL TILE ────────────────────────────────────────── */
+.plan-tile{
+  border-radius:var(--radius);border:1px solid var(--border);
+  margin-bottom:14px;overflow:hidden;
+}
+.plan-tile-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.plan-tile-body{padding:14px 16px}
+
+/* ─── REVIEW TASK ROW ───────────────────────────────────────── */
+.rv-row{
+  border-radius:var(--radius);border:1px solid var(--border);border-left-width:3px;
+  padding:14px 16px;margin-bottom:10px;
+}
+
+/* ─── TOASTS ────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a2540;border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);
+  padding:11px 20px;font-size:13px;font-weight:600;z-index:9999;
+  opacity:0;pointer-events:none;transition:all .35s;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── ANIMATIONS ────────────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.anim{animation:fadeUp .32s ease both}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div class="hdr-top">
+      <div>
+        <div class="brand">
+          <div class="brand-mark">⚡</div>
+          <span class="brand-name">FlowTrack</span>
+        </div>
+        <div class="hdr-date" id="hdr-date"></div>
+      </div>
+      <div class="hdr-right">
+        <div class="hdr-score-num" id="hdr-score">—</div>
+        <div class="hdr-score-lbl">today</div>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<div id="toast"></div>
+
+<!-- GOAL FORM MODAL -->
+<div id="goalModal" class="overlay" style="display:none" onclick="if(event.target===this)closeGoalModal()">
+  <div class="modal">
+    <div class="mhdr">
+      <h2 id="gm-title">New Goal</h2>
+      <button class="xbtn" onclick="closeGoalModal()">✕</button>
+    </div>
+    <label class="lbl" style="margin-top:0">Goal Title</label>
+    <input id="gm-t" class="inp" placeholder="e.g. Learn Rust · Ship mobile app · Run 5K" />
+    <div style="font-size:11px;color:var(--muted);margin-top:5px">Write what you want to achieve overall, not a daily task.</div>
+
+    <label class="lbl">Color — everything about this goal will use this color</label>
+    <div class="cpgrid" id="gm-colors"></div>
+
+    <label class="lbl">Default Time Block</label>
+    <div style="display:flex;gap:8px" id="gm-blocks"></div>
+
+    <label class="lbl">Why does this goal matter? (optional)</label>
+    <textarea id="gm-note" class="inp ta" placeholder="Your reason / motivation..."></textarea>
+
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button class="btn btn-primary" style="flex:1;font-size:14px;padding:13px" onclick="saveGoal()">Save Goal</button>
+      <button class="btn btn-ghost" onclick="closeGoalModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- GOAL DETAIL MODAL -->
+<div id="detailModal" class="overlay" style="display:none" onclick="if(event.target===this)closeDetail()">
+  <div class="modal modal-lg">
+    <div class="mhdr">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
+          <div id="dm-dot" style="width:13px;height:13px;border-radius:50%;flex-shrink:0"></div>
+          <h2 id="dm-title" style="font-size:17px;letter-spacing:-.2px"></h2>
+        </div>
+        <div id="dm-meta" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"></div>
+      </div>
+      <button class="xbtn" onclick="closeDetail()">✕</button>
+    </div>
+
+    <div id="dm-cal" style="margin-bottom:22px"></div>
+
+    <div id="dm-history" style="margin-bottom:18px"></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="openEditGoal()">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" id="dm-star-btn" onclick="dmToggleStar()"></button>
+      <button class="btn btn-sm btn-danger" onclick="dmCloseGoal()">🏁 Close Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN DAILY TASK MODAL -->
+<div id="planModal" class="overlay" style="display:none" onclick="if(event.target===this)closePlanModal()">
+  <div class="modal">
+    <div class="mhdr">
+      <h2 id="pm-title">Plan Daily Task</h2>
+      <button class="xbtn" onclick="closePlanModal()">✕</button>
+    </div>
+    <div id="pm-goal-info" style="margin-bottom:18px"></div>
+    <label class="lbl" style="margin-top:0">Tomorrow's specific task for this goal</label>
+    <input id="pm-task" class="inp" placeholder="e.g. Read pages 45–60 · Fix login bug · Write intro section" />
+    <div style="font-size:11px;color:var(--muted);margin-top:5px">Be concrete — what exactly will you do tomorrow?</div>
+    <label class="lbl">Time Block</label>
+    <select id="pm-block" class="inp sel">
+      <option value="morning">🌅 Morning (6 AM – 12 PM) · Hardest task</option>
+      <option value="midday">☀️ Midday (12 PM – 5 PM) · Second priority</option>
+      <option value="evening">🌙 Evening (5 PM – 10 PM) · Light tasks</option>
+    </select>
+    <label class="lbl">Notes (optional)</label>
+    <textarea id="pm-note" class="inp ta" placeholder="Any context, resources needed, links..."></textarea>
+    <div style="display:flex;gap:10px;margin-top:22px">
+      <button class="btn btn-primary" style="flex:1;font-size:14px;padding:13px" id="pm-save" onclick="savePlanTask()">Save Task</button>
+      <button class="btn btn-ghost" onclick="closePlanModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELAY REASON MODAL -->
+<div id="delayModal" class="overlay" style="display:none" onclick="if(event.target===this)closeDelayModal()">
+  <div class="modal" style="max-width:440px">
+    <div class="mhdr">
+      <h2>Mark as Delayed</h2>
+      <button class="xbtn" onclick="closeDelayModal()">✕</button>
+    </div>
+    <div id="delay-task-info" style="margin-bottom:16px;font-size:14px;color:var(--muted)"></div>
+    <label class="lbl" style="margin-top:0">Why did this get delayed?</label>
+    <textarea id="delay-reason" class="inp ta" placeholder="e.g. Had an unexpected meeting · Felt unwell · Underestimated time needed"></textarea>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmDelay()">Confirm Delay</button>
+      <button class="btn btn-ghost" onclick="closeDelayModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const COLORS = ['#f43f5e','#fb923c','#f59e0b','#84cc16','#22c55e','#10b981',
+                '#06b6d4','#3b82f6','#6366f1','#8b5cf6','#d946ef','#ec4899'];
+const BLOCKS = [
+  {id:'morning',label:'Morning',icon:'🌅',time:'6 AM–12 PM',hint:'Peak energy · hardest task'},
+  {id:'midday', label:'Midday', icon:'☀️', time:'12–5 PM',   hint:'Second priority'},
+  {id:'evening',label:'Evening',icon:'🌙',time:'5–10 PM',  hint:'Light tasks & review'},
+];
+const TABS = [
+  {id:'today', icon:'⚡', label:'Today'},
+  {id:'goals', icon:'🎯', label:'Goals'},
+  {id:'plan',  icon:'🌙', label:'Plan'},
+  {id:'stats', icon:'📊', label:'Stats'},
+  {id:'review',icon:'✅', label:'Review'},
+];
+const MOODS = ['😞','😐','🙂','😄','🚀'];
+const MOOD_L = ['Rough','Okay','Good','Great','Epic!'];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+/*
+  goals: [{id, title, color, timeBlock, note, status:'active'|'closed', starred:bool, createdAt, closedAt}]
+
+  dailyTasks: {
+    "YYYY-MM-DD": [
+      { id, goalId, task, timeBlock, note, status:'pending'|'done'|'delayed',
+        delayReason:'', completedAt:'', createdAt:'' }
+    ]
+  }
+
+  reviews: {
+    "YYYY-MM-DD": { mood:null|0-4, note:'', timestamp:'' }
+  }
+
+  Streak for a goal = consecutive days (ending today) where dailyTasks[date]
+  has AT LEAST ONE task for that goalId with status==='done'
+*/
+let S = { goals:[], dailyTasks:{}, reviews:{} };
+let currentTab = 'today';
+let editingGoalId = null;
+let detailGoalId  = null;
+let planGoalId    = null;
+let editingTaskId = null;
+let delayTaskDate = null;
+let delayTaskId   = null;
+let gmColor = COLORS[7];
+let gmBlock = 'morning';
+
+// ═══════════════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════════════
+function load() {
+  try {
+    const raw = localStorage.getItem('flowtrack_v2');
+    if (raw) S = JSON.parse(raw);
+  } catch(e) {}
+}
+function save() {
+  try { localStorage.setItem('flowtrack_v2', JSON.stringify(S)); } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATE UTILS
+// ═══════════════════════════════════════════════════════════════
+function today() { return new Date().toISOString().split('T')[0]; }
+function tomorrow() {
+  const d = new Date(); d.setDate(d.getDate()+1);
+  return d.toISOString().split('T')[0];
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split('T')[0];
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmtDate(ds, opts) {
+  return new Date(ds + 'T12:00:00').toLocaleDateString('en-US', opts);
+}
+function datesInRange(s, e) {
+  const out = []; let c = s;
+  while(c <= e) { out.push(c); c = addDays(c,1); }
+  return out;
+}
+function weekRange() {
+  const d = new Date(), day = d.getDay()||7;
+  const mon = new Date(d); mon.setDate(d.getDate()-day+1);
+  const s = mon.toISOString().split('T')[0];
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  return { s, e: sun.toISOString().split('T')[0] };
+}
+function monthRange() {
+  const d = new Date();
+  return { s:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, e:today() };
+}
+function yearRange() { return { s:`${new Date().getFullYear()}-01-01`, e:today() }; }
+
+// ═══════════════════════════════════════════════════════════════
+// STREAK LOGIC
+// ═══════════════════════════════════════════════════════════════
+function goalDoneOnDate(goalId, dateStr) {
+  return (S.dailyTasks[dateStr]||[]).some(t => t.goalId===goalId && t.status==='done');
+}
+function getStreak(goalId) {
+  let streak = 0;
+  const d = new Date(); d.setHours(12,0,0,0);
+  while(true) {
+    const ds = d.toISOString().split('T')[0];
+    if (goalDoneOnDate(goalId, ds)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+function getLongestStreak(goalId) {
+  const allDates = Object.keys(S.dailyTasks).sort();
+  if (!allDates.length) return 0;
+  let best = 0, cur = 0, prev = null;
+  for (const ds of allDates) {
+    if (goalDoneOnDate(goalId, ds)) {
+      if (prev && addDays(prev,1)===ds) cur++;
+      else cur = 1;
+      if (cur > best) best = cur;
+      prev = ds;
+    } else { prev = null; cur = 0; }
+  }
+  return best;
+}
+function scoreColor(s) {
+  if (s===null) return '#3a4060';
+  if (s>=80) return '#22c55e';
+  if (s>=50) return '#f59e0b';
+  return '#f43f5e';
+}
+function scoreForDates(dates) {
+  let planned=0, done=0;
+  const starred = S.goals.filter(g=>g.starred&&g.status==='active');
+  for (const d of dates) {
+    const tasks = (S.dailyTasks[d]||[]).filter(t=>starred.find(g=>g.id===t.goalId));
+    if (tasks.length>0) {
+      planned += tasks.length;
+      done    += tasks.filter(t=>t.status==='done').length;
+    }
+  }
+  return planned===0 ? null : Math.round((done/planned)*100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STREAK CALENDAR  (LeetCode style)
+// ═══════════════════════════════════════════════════════════════
+function buildCal(goalId, color, weeksBack=52) {
+  const todayStr = today();
+  const endD = new Date(todayStr+'T12:00:00');
+  const startD = new Date(endD);
+  startD.setDate(startD.getDate() - weeksBack*7);
+  while(startD.getDay()!==0) startD.setDate(startD.getDate()-1);
+
+  const SZ=11, GAP=2, STEP=SZ+GAP;
+  const DAY_LABELS=['','M','','W','','F',''];
+
+  const weeks=[];
+  const monthMarks=[];
+  let cur=new Date(startD), lastMonth=-1;
+
+  while(cur <= endD) {
+    const week=[];
+    for(let di=0;di<7;di++){
+      const ds = cur.toISOString().split('T')[0];
+      const done = goalId ? goalDoneOnDate(goalId,ds) : (S.dailyTasks[ds]||[]).some(t=>t.status==='done');
+      const delayed = goalId
+        ? (S.dailyTasks[ds]||[]).some(t=>t.goalId===goalId&&t.status==='delayed')
+        : false;
+      const future = ds > todayStr;
+      const isToday = ds === todayStr;
+      if(di===0){
+        const m=cur.getMonth();
+        if(m!==lastMonth){ monthMarks.push({label:cur.toLocaleString('default',{month:'short'}),col:weeks.length}); lastMonth=m; }
+      }
+      week.push({ds,done,delayed,future,isToday});
+      cur.setDate(cur.getDate()+1);
+    }
+    weeks.push(week);
+  }
+
+  const totalW=weeks.length;
+
+  // Month labels row
+  let mHtml='';
+  for(let i=0;i<monthMarks.length;i++){
+    const nextW = monthMarks[i+1]?.col ?? totalW;
+    const w = (nextW - monthMarks[i].col)*STEP;
+    mHtml+=`<div class="cal-m-lbl" style="left:${monthMarks[i].col*STEP}px;width:${w}px">${monthMarks[i].label}</div>`;
+  }
+
+  // Day labels
+  const dlHtml=DAY_LABELS.map(d=>`<div class="cal-dlbl">${d}</div>`).join('');
+
+  // Columns
+  let colsHtml='';
+  for(const week of weeks){
+    let cells='';
+    for(const cell of week){
+      let bg = cell.future ? 'rgba(255,255,255,.04)' :
+               cell.done   ? color :
+               cell.delayed? `rgba(251,146,60,.4)` :
+                             'rgba(255,255,255,.07)';
+      let outline = cell.isToday ? `outline:2px solid ${color};outline-offset:1px;` : '';
+      let opacity = cell.future ? 'opacity:.35;' : '';
+      cells+=`<div class="ccell" title="${cell.ds}${cell.done?' ✓':cell.delayed?' ⚠':''}${cell.future?' (future)':''}" style="background:${bg};${outline}${opacity}"></div>`;
+    }
+    colsHtml+=`<div class="cal-col">${cells}</div>`;
+  }
+
+  // Legend
+  const legCells=[.12,.3,.55,.8,1].map(op=>`<div class="cl-cell" style="background:${color};opacity:${op}"></div>`).join('');
+
+  return `<div class="cal-wrap"><div class="cal-inner">
+    <div class="cal-month-row" style="margin-left:26px;margin-bottom:3px">${mHtml}</div>
+    <div class="cal-grid">
+      <div class="cal-day-lbls">${dlHtml}</div>
+      <div class="cal-cols">${colsHtml}</div>
+    </div>
+    <div class="cal-legend"><span>Less</span>${legCells}<span>More</span><span style="margin-left:8px;color:rgba(251,146,60,.7)">🟧=delayed</span></div>
+  </div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════════════
+function renderHeader() {
+  document.getElementById('hdr-date').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+  document.getElementById('tabs').innerHTML = TABS.map(t=>`
+    <button class="tab${currentTab===t.id?' active':''}" onclick="switchTab('${t.id}')">
+      <span class="ti">${t.icon}</span>${t.label}
+    </button>`).join('');
+
+  // Today score
+  const tod = today();
+  const tasks = (S.dailyTasks[tod]||[]).filter(t=>{
+    const g=S.goals.find(x=>x.id===t.goalId);
+    return g&&g.starred&&g.status==='active';
+  });
+  const done = tasks.filter(t=>t.status==='done').length;
+  const sc = document.getElementById('hdr-score');
+  if(tasks.length>0){
+    const pct=Math.round(done/tasks.length*100);
+    sc.textContent=pct+'%';
+    sc.style.color=scoreColor(pct);
+  } else {
+    sc.textContent='—'; sc.style.color='#3a4060';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB SWITCH
+// ═══════════════════════════════════════════════════════════════
+function switchTab(id) {
+  currentTab=id; renderHeader(); renderContent();
+}
+function renderContent() {
+  const el=document.getElementById('content');
+  el.className='anim';
+  void el.offsetWidth;
+  const fns={today:renderToday,goals:renderGoals,plan:renderPlan,stats:renderStats,review:renderReview};
+  el.innerHTML=(fns[currentTab]||renderToday)();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TODAY TAB
+// ═══════════════════════════════════════════════════════════════
+function renderToday() {
+  const tod = today();
+  const starred = S.goals.filter(g=>g.starred&&g.status==='active');
+  const todTasks = S.dailyTasks[tod]||[];
+
+  // Only tasks for starred goals
+  const myTasks = todTasks.filter(t=>starred.find(g=>g.id===t.goalId));
+  const doneCount = myTasks.filter(t=>t.status==='done').length;
+  const total = myTasks.length;
+  const pct = total>0 ? Math.min(doneCount/total,1)*100 : 0;
+  const allDone = total>0 && doneCount===total;
+
+  if(starred.length===0) return `
+    <div class="empty">
+      <div class="empty-ico">⭐</div>
+      <div class="empty-t">No Next Nearest Goals yet</div>
+      <div class="empty-d">Go to <strong style="color:rgba(255,255,255,.5)">Goals</strong>, add your goals, then star (☆) up to 4 as your Next Nearest Goals.</div>
+    </div>`;
+
+  if(myTasks.length===0) return `
+    ${starred.length>0?`
+    <div style="margin-bottom:24px">
+      <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:8px">Today's Focus</div>
+      ${starred.map(g=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;border-radius:var(--radius);border:1px solid ${g.color}22;border-left:3px solid ${g.color};background:${g.color}08;margin-bottom:7px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${g.color}"></div>
+          <span style="font-size:14px;font-weight:600;color:${g.color}">${g.title}</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--muted)">No task planned</span>
+        </div>`).join('')}
+    </div>`:''}
+    <div class="empty" style="padding:30px 20px">
+      <div class="empty-ico">🌙</div>
+      <div class="empty-t">No tasks planned for today</div>
+      <div class="empty-d">Use the <strong style="color:rgba(255,255,255,.5)">Plan</strong> tab tonight to set specific tasks for each goal for tomorrow.</div>
+    </div>`;
+
+  // Group by time block
+  const byBlock={morning:[],midday:[],evening:[],other:[]};
+  for(const t of myTasks){
+    const b=t.timeBlock||'other';
+    if(byBlock[b]) byBlock[b].push(t);
+    else byBlock.other.push(t);
+  }
+
+  function taskCard(task){
+    const goal=S.goals.find(g=>g.id===task.goalId)||{color:'#3b82f6',title:'Unknown'};
+    const isDone=task.status==='done';
+    const isDelay=task.status==='delayed';
+    return `
+    <div class="dtcard" style="border-left-color:${goal.color};background:${isDone?goal.color+'0a':isDelay?'rgba(251,146,60,.05)':'var(--s1)'}">
+      <div class="dtcard-hdr">
+        <button class="check-circle" style="border-color:${goal.color};background:${isDone?goal.color:'transparent'};color:#fff"
+          onclick="toggleTaskDone('${tod}','${task.id}')">
+          ${isDone?'✓':isDelay?'⚠':''}
+        </button>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:${goal.color};letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px">${goal.title}</div>
+          <div style="font-size:15px;font-weight:${isDone||isDelay?500:700};color:${isDone?'#3a4060':isDelay?'#fb923c':goal.color==='#f0f4ff'?goal.color:goal.color};text-decoration:${isDone?'line-through':'none'}">${task.task}</div>
+          ${isDelay&&task.delayReason?`<div style="font-size:11px;color:#fb923c;margin-top:3px">⚠ ${task.delayReason}</div>`:''}
+        </div>
+        ${!isDone&&!isDelay?`
+        <button class="delay-btn" onclick="openDelayModal('${tod}','${task.id}')">Delayed</button>
+        `:(isDone?`<span style="font-size:20px">✅</span>`:'')}
+      </div>
+      ${task.note?`<div class="dtcard-body"><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">${task.note}</div></div>`:``}
+    </div>`;
+  }
+
+  let blocksHtml='';
+  for(const b of BLOCKS){
+    const tasks=byBlock[b.id]||[];
+    if(!tasks.length)continue;
+    blocksHtml+=`
+    <div class="block-section" style="margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-left:2px">
+        <span style="font-size:20px">${b.icon}</span>
+        <div>
+          <span style="font-size:14px;font-weight:700;color:rgba(255,255,255,.7)">${b.label}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:6px">${b.time}</span>
+          <div style="font-size:11px;color:var(--dim);font-style:italic">${b.hint}</div>
+        </div>
+      </div>
+      ${tasks.map(taskCard).join('')}
+    </div>`;
+  }
+  if(byBlock.other.length) blocksHtml+=`<div style="margin-bottom:20px">${byBlock.other.map(taskCard).join('')}</div>`;
+
+  return `
+    ${allDone?`<div class="congrats anim">🎉 All tasks done today! Incredible consistency.</div>`:''}
+
+    <div style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Daily Progress</div>
+        <div style="font-family:var(--display);font-size:24px;font-weight:900;color:${allDone?'#22c55e':'#eef0f8'}">${doneCount}/${total}</div>
+      </div>
+      <div class="pgtrack"><div class="pgfill" style="width:${pct}%;background:${allDone?'#22c55e':'linear-gradient(90deg,#2563eb,#6366f1)'}"></div></div>
+    </div>
+
+    ${blocksHtml}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GOALS TAB
+// ═══════════════════════════════════════════════════════════════
+function renderGoals() {
+  const active = S.goals.filter(g=>g.status==='active');
+  const closed = S.goals.filter(g=>g.status==='closed');
+  const starred = active.filter(g=>g.starred);
+  const backlog = active.filter(g=>!g.starred);
+  const tod = today();
+
+  function goalCard(g) {
+    const streak=getStreak(g.id);
+    const todDone=goalDoneOnDate(g.id,tod);
+    const weekDone=datesInRange(weekRange().s,weekRange().e).filter(d=>goalDoneOnDate(g.id,d)).length;
+    return `
+    <div class="gcard" style="border-left:3px solid ${g.starred?g.color:g.color+'44'};background:${g.starred?g.color+'0a':'var(--s1)'}" onclick="openDetail('${g.id}')">
+      <div class="gdot" style="background:${g.color}"></div>
+      <div class="gcard-body">
+        <div class="gcard-title" style="color:${g.starred?g.color:'var(--text)'}">${g.title}</div>
+        <div class="gcard-meta">
+          ${streak>0?`<span class="sbadge" style="color:${g.color}">🔥${streak}d</span>`:''}
+          ${todDone?`<span class="gmeta-tag" style="color:#22c55e;font-weight:700">✓ Done today</span>`:''}
+          ${weekDone>0?`<span class="gmeta-tag">${weekDone}/7 this week</span>`:''}
+          ${g.timeBlock?`<span class="gmeta-tag" style="text-transform:capitalize">${g.timeBlock}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0" onclick="event.stopPropagation()">
+        <button class="star-btn${g.starred?' starred':''}" onclick="toggleStar('${g.id}')"
+          style="border-color:${g.starred?g.color:'var(--border2)'};background:${g.starred?g.color+'18':'transparent'};color:${g.starred?g.color:'var(--muted)'}"
+          title="${g.starred?'Remove from Next Nearest Goals':'Add to Next Nearest Goals (max 4)'}">
+          ${g.starred?'★':'☆'}
+        </button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditGoalById('${g.id}')" style="font-size:13px">✏️</button>
+      </div>
+    </div>`;
+  }
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:12px;color:var(--muted)">
+        <span style="color:${starred.length>=4?'#f43f5e':'#22c55e'};font-weight:800">${starred.length}/4</span>
+        <span> Next Nearest · ${active.length} active goals</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openAddGoal()">+ New Goal</button>
+    </div>
+
+    ${starred.length>0?`
+    <div class="sectitle" style="margin-top:0">⭐ Next Nearest Goals (${starred.length}/4)</div>
+    <div style="padding:12px;border-radius:var(--radius);border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.04);margin-bottom:16px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">These are your focus goals. Create daily tasks for each in the <strong style="color:rgba(255,255,255,.4)">Plan</strong> tab every night. Streaks are built day-by-day based on completing those tasks.</div>
+      ${starred.map(goalCard).join('')}
+    </div>`:''}
+
+    ${backlog.length>0?`
+    <div class="sectitle">📋 All Goals (${backlog.length}) — star to promote</div>
+    ${backlog.map(goalCard).join('')}`:''}
+
+    ${active.length===0?`
+    <div class="empty">
+      <div class="empty-ico">🎯</div>
+      <div class="empty-t">Add your first goal</div>
+      <div class="empty-d">Write what you want to achieve. Goals are big things.<br>Daily tasks are the small steps — you plan those in the Plan tab.</div>
+    </div>`:''}
+
+    ${closed.length>0?`
+    <div style="margin-top:24px">
+      <button class="btn btn-ghost btn-sm" onclick="toggleClosed()" id="cltoggle">▶ Closed Goals (${closed.length})</button>
+      <div id="cllist" style="display:none;margin-top:10px">
+        ${closed.map(g=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:6px;opacity:.4">
+          <div class="gdot" style="background:${g.color}"></div>
+          <span style="font-size:13px;color:var(--muted);text-decoration:line-through;flex:1">${g.title}</span>
+          <span style="font-size:11px;color:var(--dim)">${g.closedAt||''}</span>
+        </div>`).join('')}
+      </div>
+    </div>`:''}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAN TAB  (night before: create daily tasks per starred goal)
+// ═══════════════════════════════════════════════════════════════
+function renderPlan() {
+  const tmr = tomorrow();
+  const starred = S.goals.filter(g=>g.starred&&g.status==='active');
+  const tmrTasks = S.dailyTasks[tmr]||[];
+  const tmrLabel = fmtDate(tmr,{weekday:'long',month:'long',day:'numeric'});
+
+  if(starred.length===0) return `
+    <div class="empty">
+      <div class="empty-ico">⭐</div>
+      <div class="empty-t">No Next Nearest Goals starred</div>
+      <div class="empty-d">Go to <strong style="color:rgba(255,255,255,.5)">Goals</strong>, add your goals,<br>then star up to 4 to start planning daily tasks.</div>
+    </div>`;
+
+  function planTile(goal) {
+    const existing = tmrTasks.filter(t=>t.goalId===goal.id);
+    const taskCards = existing.map(t=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:${goal.color}10;border:1px solid ${goal.color}30;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${goal.color};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:${goal.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.task}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;text-transform:capitalize">${t.timeBlock||'unscheduled'}</div>
+        </div>
+        <button onclick="deleteTask('${tmr}','${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:6px" title="Remove">✕</button>
+      </div>`).join('');
+
+    return `
+    <div class="plan-tile" style="border-color:${goal.color}28;border-left:3px solid ${goal.color}">
+      <div class="plan-tile-hdr" style="background:${goal.color}08;border-bottom-color:${goal.color}18">
+        <div style="width:11px;height:11px;border-radius:50%;background:${goal.color};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:800;color:${goal.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${goal.title}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Streak: 🔥 ${getStreak(goal.id)}d · Plan a specific task for tomorrow</div>
+        </div>
+        <button onclick="openPlanModal('${goal.id}')"
+          style="padding:8px 14px;border-radius:9px;background:${goal.color};border:none;color:#fff;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">
+          + Add Task
+        </button>
+      </div>
+      ${existing.length>0?`<div class="plan-tile-body">${taskCards}</div>`:
+        `<div style="padding:14px 16px;font-size:12px;color:var(--muted);font-style:italic">No task planned yet — what specific action will you take tomorrow?</div>`}
+    </div>`;
+  }
+
+  const allPlanned = starred.every(g=>(tmrTasks.filter(t=>t.goalId===g.id).length>0));
+
+  return `
+    <div style="padding:14px 18px;border-radius:var(--radius);background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.25);margin-bottom:26px">
+      <div style="font-size:9px;color:#a5b4fc;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">🌙 Planning For Tomorrow</div>
+      <div style="font-family:var(--display);font-size:19px;font-weight:900">${tmrLabel}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">Write one specific daily task per goal. Concrete actions build streaks.</div>
+    </div>
+
+    ${starred.map(planTile).join('')}
+
+    ${allPlanned?`
+    <div style="padding:14px 18px;border-radius:var(--radius);background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);text-align:center;color:#4ade80;font-weight:700;font-size:13px;margin-top:6px">
+      ✅ All goals have tasks planned for tomorrow. Sleep well!
+    </div>`:`
+    <div style="padding:12px 16px;border-radius:var(--radius);background:var(--s1);border:1px dashed var(--border2);text-align:center;color:var(--muted);font-size:12px;margin-top:6px">
+      Plan a specific task for each starred goal above before sleeping.
+    </div>`}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATS TAB
+// ═══════════════════════════════════════════════════════════════
+function renderStats() {
+  const tod=today();
+  const {s:ws,e:we}=weekRange(),{s:ms,e:me}=monthRange(),{s:ys,e:ye}=yearRange();
+  const wd=datesInRange(ws,we),md=datesInRange(ms,me),yd=datesInRange(ys,ye);
+
+  const todTasks=(S.dailyTasks[tod]||[]).filter(t=>{const g=S.goals.find(x=>x.id===t.goalId);return g&&g.starred&&g.status==='active';});
+  const todScore=todTasks.length>0?Math.round(todTasks.filter(t=>t.status==='done').length/todTasks.length*100):null;
+
+  function sc(label,score){
+    const c=scoreColor(score);
+    return`<div class="scard">
+      <div class="sval" style="color:${c}">${score!==null?score+'%':'—'}</div>
+      <div class="slbl">${label}</div>
+      ${score!==null?`<div style="height:3px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:10px"><div style="height:100%;width:${score}%;background:${c};border-radius:99px;transition:width .6s ease"></div></div>`:``}
+    </div>`;
+  }
+
+  const active=S.goals.filter(g=>g.status==='active');
+  const starred=active.filter(g=>g.starred);
+
+  const perGoalHtml=active.map(g=>{
+    const streak=getStreak(g.id);
+    const longest=getLongestStreak(g.id);
+    const wkD=wd.filter(d=>goalDoneOnDate(g.id,d)).length;
+    const moD=md.filter(d=>goalDoneOnDate(g.id,d)).length;
+    const total=Object.keys(S.dailyTasks).filter(d=>goalDoneOnDate(g.id,d)).length;
+    return`
+    <div class="card card-sm" style="border-left:3px solid ${g.color};margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:12px" onclick="toggleGoalCal('${g.id}')">
+        <div class="gdot" style="background:${g.color}"></div>
+        <span style="font-family:var(--display);font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${g.color}">${g.title}</span>
+        ${g.starred?`<span style="font-size:10px;color:${g.color};background:${g.color}15;padding:2px 8px;border-radius:20px;font-weight:700;letter-spacing:.04em">NEXT</span>`:''}
+        <span id="gca_${g.id}" style="color:${g.color};font-size:12px">▼</span>
+      </div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        ${[
+          ['🔥',streak+'d','streak',g.color],
+          ['🏆',longest+'d','longest',g.color],
+          ['📅',wkD+'/7','this week','#3b82f6'],
+          ['📆',moD,'this month','#22c55e'],
+          ['✅',total,'total days','#8b5cf6'],
+        ].map(([ic,v,l,c])=>`<div style="text-align:center">
+          <div style="font-family:var(--display);font-size:19px;font-weight:900;color:${c}">${ic} ${v}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${l}</div>
+        </div>`).join('')}
+      </div>
+      <div id="gcd_${g.id}" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        ${buildCal(g.id,g.color,26)}
+        <div style="margin-top:14px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Recent Tasks</div>
+          ${recentTasksHtml(g.id,g.color,7)}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="sgrid">
+      ${sc('Today',todScore)}
+      ${sc('This Week',scoreForDates(wd))}
+      ${sc('This Month',scoreForDates(md))}
+      ${sc('This Year',scoreForDates(yd))}
+    </div>
+
+    <div style="margin-bottom:28px">
+      <div class="sectitle" style="margin-top:0">📅 All Activity — Contribution Calendar</div>
+      <div class="card card-sm">${buildCal(null,'#4f46e5',26)}</div>
+    </div>
+
+    <div>
+      <div class="sectitle">Per Goal — Click to expand streak calendar</div>
+      ${active.length===0?`<div class="empty" style="padding:24px"><div class="empty-t">No goals yet</div></div>`:perGoalHtml}
+    </div>`;
+}
+
+function recentTasksHtml(goalId, color, days) {
+  const dates=[];
+  const d=new Date(); d.setHours(12,0,0,0);
+  for(let i=0;i<days;i++){
+    dates.unshift(d.toISOString().split('T')[0]);
+    d.setDate(d.getDate()-1);
+  }
+  const rows=dates.reverse().map(ds=>{
+    const tasks=(S.dailyTasks[ds]||[]).filter(t=>t.goalId===goalId);
+    if(!tasks.length) return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.3"><span style="font-size:10px;color:var(--muted);width:72px;flex-shrink:0;font-family:var(--mono)">${ds.slice(5)}</span><span style="font-size:11px;color:var(--muted)">—</span></div>`;
+    return tasks.map(t=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:10px;color:var(--muted);width:72px;flex-shrink:0;font-family:var(--mono)">${ds.slice(5)}</span>
+        <span style="font-size:12px;${t.status==='done'?`color:${color};font-weight:600`:t.status==='delayed'?'color:#fb923c':'color:var(--muted)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.task}</span>
+        <span style="font-size:11px;font-weight:700;${t.status==='done'?`color:${color}`:t.status==='delayed'?'color:#fb923c':'color:var(--muted)'}">${t.status==='done'?'✓':t.status==='delayed'?'⚠':'○'}</span>
+      </div>`).join('');
+  });
+  return `<div>${rows.join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REVIEW TAB
+// ═══════════════════════════════════════════════════════════════
+function renderReview() {
+  const tod=today();
+  const review=S.reviews[tod]||{mood:null,note:'',timestamp:''};
+  const starred=S.goals.filter(g=>g.starred&&g.status==='active');
+  const todTasks=(S.dailyTasks[tod]||[]).filter(t=>starred.find(g=>g.id===t.goalId));
+  const done=todTasks.filter(t=>t.status==='done').length;
+  const delayed=todTasks.filter(t=>t.status==='delayed').length;
+  const pending=todTasks.filter(t=>t.status==='pending').length;
+  const score=todTasks.length>0?Math.round(done/todTasks.length*100):null;
+
+  const byGoal={};
+  for(const g of starred){
+    byGoal[g.id]={goal:g,tasks:todTasks.filter(t=>t.goalId===g.id)};
+  }
+
+  const todLabel=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  return `
+    <div style="padding:14px 18px;border-radius:var(--radius);background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.22);margin-bottom:24px">
+      <div style="font-size:9px;color:#22d3ee;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">✅ End-of-Day Review</div>
+      <div style="font-family:var(--display);font-size:18px;font-weight:900">${todLabel}</div>
+    </div>
+
+    <!-- Mood -->
+    <div style="margin-bottom:26px">
+      <div class="lbl" style="margin-top:0">How was your productivity today?</div>
+      <div class="mood-row">
+        ${MOODS.map((m,i)=>`<button class="mbtn${review.mood===i?' active':''}" onclick="setMood(${i})" style="${review.mood===i?`border-color:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.2);`:''}title="${MOOD_L[i]}">${m}</button>`).join('')}
+      </div>
+      ${review.mood!==null?`<div style="text-align:center;font-size:13px;color:var(--muted);margin-top:8px;font-weight:700">${MOOD_L[review.mood]}</div>`:''}
+    </div>
+
+    <!-- Per-goal task review -->
+    ${todTasks.length===0?`<div style="font-size:13px;color:var(--muted);margin-bottom:24px;padding:14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--s1)">No tasks were planned for today. Use <strong style="color:rgba(255,255,255,.4)">Plan</strong> tonight to set tomorrow's tasks.</div>`:''}
+
+    ${Object.values(byGoal).map(({goal,tasks})=>{
+      if(!tasks.length) return `
+        <div class="rv-row" style="border-left-color:${goal.color}44;opacity:.5">
+          <div style="font-size:11px;font-weight:800;color:${goal.color};text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${goal.title}</div>
+          <div style="font-size:12px;color:var(--muted)">No task planned for today.</div>
+        </div>`;
+      return tasks.map(task=>`
+        <div class="rv-row" style="border-left-color:${goal.color}">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <button class="check-circle" style="border-color:${goal.color};background:${task.status==='done'?goal.color:'transparent'};color:#fff;flex-shrink:0"
+              onclick="toggleTaskDone('${tod}','${task.id}');renderContent()">
+              ${task.status==='done'?'✓':task.status==='delayed'?'⚠':''}
+            </button>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:10px;font-weight:800;color:${goal.color};text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${goal.title}</div>
+              <div style="font-size:14px;font-weight:700;color:${task.status==='done'?goal.color:task.status==='delayed'?'#fb923c':'var(--text)'};text-decoration:${task.status==='done'?'line-through':'none'}">${task.task}</div>
+              ${task.delayReason?`<div style="font-size:11px;color:#fb923c;margin-top:5px">⚠ Delayed: ${task.delayReason}</div>`:''}
+            </div>
+            ${task.status!=='done'&&task.status!=='delayed'?`<button class="delay-btn" onclick="openDelayModal('${tod}','${task.id}')">Delayed</button>`:''}
+          </div>
+          ${task.status==='delayed'&&!task.delayReason?`
+          <div style="margin-top:10px">
+            <input class="inp" style="font-size:12px;padding:8px 12px" placeholder="Why was this delayed?" onblur="setDelayReason('${tod}','${task.id}',this.value)" />
+          </div>`:''}
+        </div>`).join('');
+    }).join('')}
+
+    <!-- Reflection -->
+    <div style="margin-top:6px;margin-bottom:24px">
+      <div class="lbl">Reflection — what went well? what to improve?</div>
+      <textarea class="inp ta" style="min-height:90px" placeholder="Lessons learned · What slowed you down · Gratitude · Tomorrow's intention..." oninput="setReviewNote(this.value)">${review.note||''}</textarea>
+    </div>
+
+    <!-- Score -->
+    ${score!==null?`
+    <div style="padding:22px;border-radius:var(--radius);background:var(--s1);border:1px solid var(--border);text-align:center">
+      <div style="font-family:var(--display);font-size:48px;font-weight:900;color:${scoreColor(score)}">${score}%</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Completion Score</div>
+      <div style="display:flex;justify-content:center;gap:20px;margin-top:16px;font-size:13px;font-weight:600">
+        <span style="color:#22c55e">✓ ${done} done</span>
+        <span style="color:#fb923c">⚠ ${delayed} delayed</span>
+        <span style="color:var(--muted)">○ ${pending} pending</span>
+      </div>
+      <div style="font-size:30px;margin-top:12px">${score===100?'🎉':score>=75?'💪':score>=50?'📈':'😅'}</div>
+    </div>`:``}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════
+
+// Goals
+function toggleClosed(){
+  const l=document.getElementById('cllist'),b=document.getElementById('cltoggle');
+  if(!l||!b)return;
+  const h=l.style.display==='none';
+  l.style.display=h?'block':'none';
+  b.textContent=(h?'▼':'▶')+' Closed Goals ('+S.goals.filter(g=>g.status==='closed').length+')';
+}
+
+function toggleGoalCal(id){
+  const d=document.getElementById('gcd_'+id),a=document.getElementById('gca_'+id);
+  if(!d)return;
+  const h=d.style.display==='none';
+  d.style.display=h?'block':'none';
+  if(a)a.textContent=h?'▲':'▼';
+}
+
+function toggleStar(id){
+  const goal=S.goals.find(g=>g.id===id);
+  if(!goal)return;
+  const starred=S.goals.filter(g=>g.starred&&g.status==='active');
+  if(!goal.starred&&starred.length>=4){showToast('Max 4 Next Nearest Goals. Unstar one first.');return;}
+  goal.starred=!goal.starred;
+  save(); renderContent();
+}
+
+// Tasks
+function toggleTaskDone(date, taskId){
+  const tasks=S.dailyTasks[date]||[];
+  const t=tasks.find(x=>x.id===taskId);
+  if(!t)return;
+  if(t.status==='done'){t.status='pending';t.completedAt='';}
+  else{t.status='done';t.completedAt=today();t.delayReason='';}
+  S.dailyTasks[date]=tasks;
+  save(); renderHeader(); renderContent();
+}
+
+function deleteTask(date, taskId){
+  S.dailyTasks[date]=(S.dailyTasks[date]||[]).filter(t=>t.id!==taskId);
+  save(); renderContent();
+}
+
+function setDelayReason(date,taskId,reason){
+  const t=(S.dailyTasks[date]||[]).find(x=>x.id===taskId);
+  if(t&&reason.trim()){t.delayReason=reason.trim();save();}
+}
+
+// Review
+function setMood(i){
+  const tod=today();
+  S.reviews[tod]={...(S.reviews[tod]||{}),mood:i,timestamp:new Date().toISOString()};
+  save(); renderContent();
+}
+function setReviewNote(v){
+  const tod=today();
+  S.reviews[tod]={...(S.reviews[tod]||{}),note:v};
+  save();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GOAL MODAL
+// ═══════════════════════════════════════════════════════════════
+const BLOCK_ICONS={morning:'🌅',midday:'☀️',evening:'🌙'};
+function openAddGoal(){
+  editingGoalId=null; gmColor=COLORS[7]; gmBlock='morning';
+  document.getElementById('gm-title').textContent='New Goal';
+  document.getElementById('gm-t').value='';
+  document.getElementById('gm-note').value='';
+  renderGmColors(); renderGmBlocks();
+  document.getElementById('goalModal').style.display='flex';
+  setTimeout(()=>document.getElementById('gm-t').focus(),120);
+}
+function openEditGoalById(id){
+  const g=S.goals.find(x=>x.id===id);if(!g)return;
+  editingGoalId=id; gmColor=g.color; gmBlock=g.timeBlock||'morning';
+  document.getElementById('gm-title').textContent='Edit Goal';
+  document.getElementById('gm-t').value=g.title;
+  document.getElementById('gm-note').value=g.note||'';
+  renderGmColors(); renderGmBlocks();
+  document.getElementById('goalModal').style.display='flex';
+  closeDetail();
+}
+function openEditGoal(){ if(detailGoalId) openEditGoalById(detailGoalId); }
+function closeGoalModal(){ document.getElementById('goalModal').style.display='none'; }
+
+function renderGmColors(){
+  document.getElementById('gm-colors').innerHTML=COLORS.map(c=>`
+    <div class="cpdot${c===gmColor?' sel':''}" style="background:${c};${c===gmColor?`outline:2.5px solid ${c};outline-offset:3px;transform:scale(1.22);`:''}" onclick="selectGmColor('${c}')"></div>`).join('');
+}
+function renderGmBlocks(){
+  document.getElementById('gm-blocks').innerHTML=BLOCKS.map(b=>`
+    <button onclick="selectGmBlock('${b.id}')" style="flex:1;padding:10px 4px;border-radius:10px;cursor:pointer;text-align:center;transition:all .15s;
+      border:${gmBlock===b.id?`2px solid ${gmColor}`:'1px solid var(--border2)'};
+      background:${gmBlock===b.id?gmColor+'18':'var(--s2)'};
+      color:${gmBlock===b.id?gmColor:'var(--muted)'}">
+      <div style="font-size:20px;margin-bottom:3px">${b.icon}</div>
+      <div style="font-size:11px;font-weight:700">${b.label}</div>
+    </button>`).join('');
+}
+function selectGmColor(c){gmColor=c;renderGmColors();renderGmBlocks();}
+function selectGmBlock(b){gmBlock=b;renderGmBlocks();}
+
+document.getElementById('gm-t').addEventListener('keydown',e=>{if(e.key==='Enter')saveGoal();});
+
+function saveGoal(){
+  const title=document.getElementById('gm-t').value.trim();
+  const note=document.getElementById('gm-note').value.trim();
+  if(!title){document.getElementById('gm-t').focus();return;}
+  if(editingGoalId){
+    S.goals=S.goals.map(g=>g.id===editingGoalId?{...g,title,color:gmColor,timeBlock:gmBlock,note}:g);
+    showToast('Goal updated');
+  } else {
+    S.goals.push({id:uid(),title,color:gmColor,timeBlock:gmBlock,note,status:'active',starred:false,createdAt:today()});
+    showToast('Goal added!');
+  }
+  save(); closeGoalModal(); renderContent();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DETAIL MODAL
+// ═══════════════════════════════════════════════════════════════
+function openDetail(id){
+  detailGoalId=id;
+  renderDetailModal();
+  document.getElementById('detailModal').style.display='flex';
+}
+function closeDetail(){
+  document.getElementById('detailModal').style.display='none';
+  detailGoalId=null;
+}
+function renderDetailModal(){
+  const g=S.goals.find(x=>x.id===detailGoalId);if(!g)return;
+  const streak=getStreak(g.id);
+  const longest=getLongestStreak(g.id);
+  const totalDone=Object.keys(S.dailyTasks).filter(d=>goalDoneOnDate(g.id,d)).length;
+
+  document.getElementById('dm-dot').style.background=g.color;
+  document.getElementById('dm-title').textContent=g.title;
+  document.getElementById('dm-title').style.color=g.color;
+
+  document.getElementById('dm-meta').innerHTML=`
+    ${streak>0?`<span class="sbadge" style="color:${g.color}">🔥 ${streak}-day streak</span>`:''}
+    ${longest>0?`<span style="font-size:11px;color:${g.color};font-weight:700;font-family:var(--mono)">🏆 Best: ${longest}d</span>`:''}
+    ${g.starred?`<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:${g.color}18;border:1px solid ${g.color}44;color:${g.color};font-weight:700">⭐ Next Nearest</span>`:''}
+    <span style="font-size:11px;color:var(--muted);font-weight:600">✅ ${totalDone} days completed</span>
+  `;
+
+  // Calendar
+  document.getElementById('dm-cal').innerHTML=`
+    <div style="font-size:10px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Streak Calendar</div>
+    ${buildCal(g.id,g.color,26)}`;
+
+  // Recent task history (last 14 days)
+  document.getElementById('dm-history').innerHTML=`
+    <div style="font-size:10px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Recent Daily Tasks (14 days)</div>
+    ${recentTasksHtml(g.id,g.color,14)}`;
+
+  const starBtn=document.getElementById('dm-star-btn');
+  starBtn.textContent=g.starred?'★ Remove from Next Nearest':'☆ Add to Next Nearest';
+  starBtn.style.color=g.starred?g.color:'var(--muted)';
+  starBtn.style.borderColor=g.starred?g.color:'var(--border2)';
+}
+
+function dmToggleStar(){
+  if(!detailGoalId)return;
+  toggleStar(detailGoalId);
+  renderDetailModal();
+}
+function dmCloseGoal(){
+  const g=S.goals.find(x=>x.id===detailGoalId);
+  if(!g)return;
+  if(!confirm(`Mark "${g.title}" as achieved and close it?`))return;
+  g.status='closed';g.starred=false;g.closedAt=today();
+  save();closeDetail();renderContent();showToast('Goal closed 🏁');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAN MODAL  (add daily task for a goal)
+// ═══════════════════════════════════════════════════════════════
+function openPlanModal(goalId){
+  planGoalId=goalId;
+  editingTaskId=null;
+  const g=S.goals.find(x=>x.id===goalId);if(!g)return;
+  const tmr=tomorrow();
+  document.getElementById('pm-title').textContent='Plan Task for Tomorrow';
+  document.getElementById('pm-goal-info').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:9px;background:${g.color}10;border:1px solid ${g.color}30">
+      <div style="width:10px;height:10px;border-radius:50%;background:${g.color};flex-shrink:0"></div>
+      <span style="font-size:13px;font-weight:700;color:${g.color}">${g.title}</span>
+    </div>`;
+  document.getElementById('pm-task').value='';
+  document.getElementById('pm-note').value='';
+  document.getElementById('pm-block').value=g.timeBlock||'morning';
+  document.getElementById('pm-save').style.background=`linear-gradient(135deg,${g.color},${g.color}cc)`;
+  document.getElementById('planModal').style.display='flex';
+  setTimeout(()=>document.getElementById('pm-task').focus(),120);
+}
+function closePlanModal(){document.getElementById('planModal').style.display='none';}
+
+document.getElementById('pm-task').addEventListener('keydown',e=>{if(e.key==='Enter')savePlanTask();});
+
+function savePlanTask(){
+  const task=document.getElementById('pm-task').value.trim();
+  const block=document.getElementById('pm-block').value;
+  const note=document.getElementById('pm-note').value.trim();
+  if(!task){document.getElementById('pm-task').focus();return;}
+  const tmr=tomorrow();
+  if(!S.dailyTasks[tmr])S.dailyTasks[tmr]=[];
+  S.dailyTasks[tmr].push({id:uid(),goalId:planGoalId,task,timeBlock:block,note,status:'pending',delayReason:'',completedAt:'',createdAt:today()});
+  save();closePlanModal();renderContent();showToast('Task planned ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DELAY MODAL
+// ═══════════════════════════════════════════════════════════════
+function openDelayModal(date,taskId){
+  delayTaskDate=date;delayTaskId=taskId;
+  const t=(S.dailyTasks[date]||[]).find(x=>x.id===taskId);
+  if(!t)return;
+  const g=S.goals.find(x=>x.id===t.goalId)||{};
+  document.getElementById('delay-task-info').innerHTML=`
+    <div style="padding:10px 13px;border-radius:9px;background:${g.color||'#3b82f6'}10;border:1px solid ${g.color||'#3b82f6'}25;font-size:14px;color:var(--text);font-weight:600">${t.task}</div>`;
+  document.getElementById('delay-reason').value=t.delayReason||'';
+  document.getElementById('delayModal').style.display='flex';
+  setTimeout(()=>document.getElementById('delay-reason').focus(),120);
+}
+function closeDelayModal(){document.getElementById('delayModal').style.display='none';}
+function confirmDelay(){
+  const reason=document.getElementById('delay-reason').value.trim();
+  const tasks=S.dailyTasks[delayTaskDate]||[];
+  const t=tasks.find(x=>x.id===delayTaskId);
+  if(t){t.status='delayed';t.delayReason=reason||'No reason given';}
+  S.dailyTasks[delayTaskDate]=tasks;
+  save();closeDelayModal();renderHeader();renderContent();showToast('Marked as delayed');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+let toastTimer=null;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+load();
+renderHeader();
+renderContent();
+</script>
+</body>
+</html>
